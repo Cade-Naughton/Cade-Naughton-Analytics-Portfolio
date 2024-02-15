@@ -1,0 +1,66 @@
+SELECT *
+FROM (
+ Select *,
+ Dense_rank() OVER(PARTITION BY year ORDER BY num_sold DESC) AS rank
+ FROM CTE
+) ranked
+WHERE rank <= 10
+ORDER BY year, rank;
+
+
+-- Are there any seasonal patterns in liquor sales
+-- Upward trends in June, October, and December
+SELECT
+ EXTRACT(MONTH FROM date) as month,
+ SUM(sale_dollars) as sales
+FROM bigquery-public-data.iowa_liquor_sales.sales
+GROUP BY month
+ORDER BY month ASC;
+
+
+-- Which counties have the highest sales?
+--POLK
+Select county,
+SUM(sale_dollars) as sales
+FROM bigquery-public-data.iowa_liquor_sales.sales
+GROUP BY county
+ORDER BY sales DESC
+LIMIT 10
+
+
+-- Which is the average price of liquor by category?
+Select
+ category_name,
+ ROUND(AVG(sale_dollars / bottles_sold),2) AS avg_price
+FROM bigquery-public-data.iowa_liquor_sales.sales
+WHERE bottles_sold != 0
+GROUP BY category_name
+ORDER BY avg_price DESC;
+
+
+
+
+-- to find errors in upper dataset query
+SELECT *
+FROM bigquery-public-data.iowa_liquor_sales.sales
+WHERE bottles_sold = 0
+
+
+-- Which liquor brands have the highest profit margins for retailers?
+-- Connemara 12 Year by 73.94% and Bird Dog Peach by 53.72%
+Select
+ item_description AS brand,
+ ROUND(AVG(state_bottle_cost),2) AS avg_cost,
+ ROUND(AVG(state_bottle_retail),2) avg_revenue,
+ ROUND(AVG(state_bottle_retail) - AVG(state_bottle_cost),2) AS profit,
+ ROUND(((AVG(state_bottle_retail) - AVG(state_bottle_cost)) / AVG (state_bottle_retail)) * 100,2) AS margin
+FROM bigquery-public-data.iowa_liquor_sales.sales
+GROUP BY item_description
+ORDER BY margin DESC
+LIMIT 10;
+
+
+
+
+
+
